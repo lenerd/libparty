@@ -1,5 +1,6 @@
 // #include <stddef>
 #include <iostream>
+#include <fstream>
 #include <boost/program_options.hpp>
 #include "network/tcp_connection.hpp"
 #include "ot/ot_hl17.hpp"
@@ -62,6 +63,40 @@ Options parse_arguments(int argc, char* argv[])
 }
 
 
+std::vector<bool> parse_inputfile(const Options& options)
+{
+    std::vector<bool> choices(options.number_ots);
+    std::ifstream f(options.input_file);
+    bool b;
+    for (size_t i = 0; i < options.number_ots; ++i)
+    {
+        f >> b;
+        choices[i] = b;
+    }
+    return choices;
+}
+
+void write_outputfile_receiver(const Options& options,
+                               const std::vector<bytes_t> output)
+{
+    std::ofstream f(options.output_file);
+    for (auto& o : output)
+    {
+        f << hexlify(o, true) << "\n";
+    }
+}
+
+void write_outputfile_sender(const Options& options,
+                             const std::vector<std::vector<bytes_t>> output)
+{
+    std::ofstream f(options.output_file);
+    for (auto& o : output)
+    {
+        f << hexlify(o[0], true) << "," << hexlify(o[1], true) << "\n";
+    }
+}
+
+
 int main(int argc, char* argv[])
 {
     auto options{parse_arguments(argc, argv)};
@@ -74,8 +109,23 @@ int main(int argc, char* argv[])
                                                  options.address,
                                                  options.port));
         OT_HL17 ot{*connection};
-        std::string foo;
-        std::cin >> foo;
+        if (options.role == Role::server)
+        {
+            std::vector<std::vector<bytes_t>> output;
+            output.reserve(options.number_ots);
+            for (size_t i = 0; i < options.number_ots; ++i)
+                output.push_back(ot.send());
+            write_outputfile_sender(options, output);
+        }
+        else  // Role::client
+        {
+            auto choices = parse_inputfile(options);
+            std::vector<bytes_t> output;
+            output.reserve(options.number_ots);
+            for (auto choice : choices)
+                output.push_back(ot.recv(choice));
+            write_outputfile_receiver(options, output);
+        }
     }
     catch (std::exception &e)
     {

@@ -144,16 +144,6 @@ std::vector<bytes_t> OT_HL17::send_2(Sender_State& state, const bytes_t& message
     return state.ks;
 }
 
-std::vector<bytes_t> OT_HL17::send()
-{
-    Sender_State state;
-    auto msg_s0 = send_0(state);
-    connection_.send_message(msg_s0);
-    send_1(state);
-    auto msg_r1 = connection_.recv_message();
-    return send_2(state, msg_r1);
-}
-
 void OT_HL17::recv_0(Receiver_State& state, int choice)
 {
     state.choice = choice;
@@ -219,12 +209,23 @@ bytes_t OT_HL17::recv_2(Receiver_State& state)
     return hash_output;
 }
 
+std::vector<bytes_t> OT_HL17::send()
+{
+    Sender_State state;
+    auto msg_s0 = send_0(state);
+    connection_.send_message(msg_s0);
+    send_1(state);
+    auto msg_r1 = connection_.recv_message();
+    return send_2(state, msg_r1);
+}
+
 bytes_t OT_HL17::recv(size_t choice)
 {
     Receiver_State state;
     recv_0(state, choice);
     auto msg_s0 = connection_.recv_message();
     auto msg_r1 = recv_1(state, msg_s0);
+    connection_.send_message(msg_r1);
     return recv_2(state);
 }
 

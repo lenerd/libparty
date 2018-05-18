@@ -14,6 +14,7 @@ add_library(party
     src/network/tcp_connection.cpp
     src/ot/ot_hl17.cpp
     src/util/util.c
+    src/util/util.cpp
     src/util/options.cpp
 )
 target_compile_features(party PUBLIC cxx_std_17)
@@ -21,6 +22,7 @@ target_include_directories(party PRIVATE src)
 target_include_directories(party PRIVATE /usr/include/botan-2)
 target_link_libraries(party botan-2)
 target_link_libraries(party boost_program_options boost_system)
+target_link_libraries(party pthread)
 
 add_executable(baseOT bin/baseOT.cpp)
 target_include_directories(baseOT PRIVATE src)

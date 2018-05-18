@@ -1,8 +1,10 @@
+#include <future>
 #include <gtest/gtest.h>
 #include "network/devnull_connection.hpp"
+#include "network/dummy_connection.hpp"
 #include "ot/ot_hl17.hpp"
 
-TEST(OT_HL17_Test, Receive0)
+TEST(OT_HL17_Test, SR0)
 {
     DevNullConnection connection;
     OT_HL17 ot{connection};
@@ -23,7 +25,7 @@ TEST(OT_HL17_Test, Receive0)
     ASSERT_TRUE(res_r == res_s[choice]);
 }
 
-TEST(OT_HL17_Test, Receive1)
+TEST(OT_HL17_Test, SR1)
 {
     DevNullConnection connection;
     OT_HL17 ot{connection};
@@ -42,4 +44,54 @@ TEST(OT_HL17_Test, Receive1)
     auto res_r = ot.recv_2(rs);
 
     ASSERT_TRUE(res_r == res_s[choice]);
+}
+
+TEST(OT_HL17_Test, SRConnection0)
+{
+    auto conn_pair = DummyConnection::make_dummies();
+    OT_HL17 ot_sender{*conn_pair.first};
+    OT_HL17 ot_receiver{*conn_pair.second};
+
+    int choice = 0;
+
+    auto fut_s_1{std::async(std::launch::async,
+        [this, &ot_sender]
+        {
+            return ot_sender.send();
+        })};
+
+    auto fut_r_1{std::async(std::launch::async,
+        [this, &ot_receiver, choice]
+        {
+            return ot_receiver.recv(choice);
+        })};
+    auto out_s{fut_s_1.get()};
+    auto out_r{fut_r_1.get()};
+
+    ASSERT_EQ(out_r, out_s[choice]);
+}
+
+TEST(OT_HL17_Test, SRConnection1)
+{
+    auto conn_pair = DummyConnection::make_dummies();
+    OT_HL17 ot_sender{*conn_pair.first};
+    OT_HL17 ot_receiver{*conn_pair.second};
+
+    int choice = 1;
+
+    auto fut_s_1{std::async(std::launch::async,
+        [this, &ot_sender]
+        {
+            return ot_sender.send();
+        })};
+
+    auto fut_r_1{std::async(std::launch::async,
+        [this, &ot_receiver, choice]
+        {
+            return ot_receiver.recv(choice);
+        })};
+    auto out_s{fut_s_1.get()};
+    auto out_r{fut_r_1.get()};
+
+    ASSERT_EQ(out_r, out_s[choice]);
 }
