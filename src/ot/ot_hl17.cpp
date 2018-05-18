@@ -67,16 +67,19 @@ void OT_HL17::send_1(Sender_State& state)
     // T = G(S)
     hash_point(state.T, state.S);
 }
-std::vector<bytes_t> OT_HL17::send_2(Sender_State& state, const bytes_t& message)
+std::pair<bytes_t, bytes_t> OT_HL17::send_2(Sender_State& state, const bytes_t& message)
 {
     // // assert R in GG
     if (!x25519_ge_frombytes_vartime(&state.R, reinterpret_cast<const uint8_t*>(message.data())))
         std::terminate();
 
-
-    state.ks.resize(2);
-
     auto hash(Botan::Blake2b(128));
+
+    // std::pair<bytes_t, bytes_t> output;
+    auto output = std::make_pair<>(bytes_t(16), bytes_t(16));
+    output.first.resize(hash.output_length());
+    output.second.resize(hash.output_length());
+
     std::array<uint8_t, 3*32> hash_input;
     curve25519::ge_p3_tobytes(hash_input.data(), &state.S);
     curve25519::ge_p3_tobytes(hash_input.data() + 32, &state.R);
@@ -87,9 +90,8 @@ std::vector<bytes_t> OT_HL17::send_2(Sender_State& state, const bytes_t& message
     curve25519::x25519_ge_scalarmult(&y_times_R_p2, state.y, &state.R);
     curve25519::x25519_ge_tobytes(hash_input.data() + 64, &y_times_R_p2);
 
-    state.ks[0].resize(hash.output_length());
     hash.update(hash_input.data(), hash_input.size());
-    hash.final(reinterpret_cast<uint8_t*>(state.ks[0].data()));
+    hash.final(reinterpret_cast<uint8_t*>(output.first.data()));
 
 
     hash.clear();
@@ -137,14 +139,13 @@ std::vector<bytes_t> OT_HL17::send_2(Sender_State& state, const bytes_t& message
     // }
 
 
-    state.ks[1].resize(hash.output_length());
     hash.update(hash_input.data(), hash_input.size());
-    hash.final(reinterpret_cast<uint8_t*>(state.ks[1].data()));
+    hash.final(reinterpret_cast<uint8_t*>(output.second.data()));
 
-    return state.ks;
+    return output;
 }
 
-void OT_HL17::recv_0(Receiver_State& state, int choice)
+void OT_HL17::recv_0(Receiver_State& state, bool choice)
 {
     state.choice = choice;
     // sample x <- Zp
@@ -209,7 +210,7 @@ bytes_t OT_HL17::recv_2(Receiver_State& state)
     return hash_output;
 }
 
-std::vector<bytes_t> OT_HL17::send()
+std::pair<bytes_t, bytes_t> OT_HL17::send()
 {
     Sender_State state;
     auto msg_s0 = send_0(state);
@@ -219,7 +220,7 @@ std::vector<bytes_t> OT_HL17::send()
     return send_2(state, msg_r1);
 }
 
-bytes_t OT_HL17::recv(size_t choice)
+bytes_t OT_HL17::recv(bool choice)
 {
     Receiver_State state;
     recv_0(state, choice);
@@ -229,3 +230,61 @@ bytes_t OT_HL17::recv(size_t choice)
     return recv_2(state);
 }
 
+std::vector<std::pair<bytes_t, bytes_t>> OT_HL17::send(size_t number_ots)
+{
+    std::vector<Sender_State> states(number_ots);
+    std::vector<bytes_t> msgs_s0(number_ots);
+    std::vector<bytes_t> msgs_r1(number_ots);
+    std::vector<std::pair<bytes_t, bytes_t>> output(number_ots);
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        msgs_s0[i] = send_0(states[i]);
+    }
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        connection_.send_message(msgs_s0[i]);
+    }
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        send_1(states[i]);
+    }
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        msgs_r1[i] = connection_.recv_message();
+    }
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        output[i] = send_2(states[i], msgs_r1[i]);
+    }
+    return output;
+}
+
+std::vector<bytes_t> OT_HL17::recv(std::vector<bool> choices)
+{
+    auto number_ots = choices.size();
+    std::vector<Receiver_State> states(number_ots);
+    std::vector<bytes_t> msgs_s0(number_ots);
+    std::vector<bytes_t> msgs_r1(number_ots);
+    std::vector<bytes_t> output(number_ots);
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        recv_0(states[i], choices[i]);
+    }
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        msgs_s0[i] = connection_.recv_message();
+    }
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        msgs_r1[i] = recv_1(states[i], msgs_s0[i]);
+    }
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        connection_.send_message(msgs_r1[i]);
+    }
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        output[i] = recv_2(states[i]);
+    }
+    return output;
+}

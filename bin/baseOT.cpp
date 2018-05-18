@@ -87,12 +87,12 @@ void write_outputfile_receiver(const Options& options,
 }
 
 void write_outputfile_sender(const Options& options,
-                             const std::vector<std::vector<bytes_t>> output)
+                             const std::vector<std::pair<bytes_t, bytes_t>> output)
 {
     std::ofstream f(options.output_file);
-    for (auto& o : output)
+    for (const auto& [o0, o1] : output)
     {
-        f << hexlify(o[0], true) << "," << hexlify(o[1], true) << "\n";
+        f << hexlify(o0, true) << "," << hexlify(o1, true) << "\n";
     }
 }
 
@@ -111,19 +111,13 @@ int main(int argc, char* argv[])
         OT_HL17 ot{*connection};
         if (options.role == Role::server)
         {
-            std::vector<std::vector<bytes_t>> output;
-            output.reserve(options.number_ots);
-            for (size_t i = 0; i < options.number_ots; ++i)
-                output.push_back(ot.send());
+            auto output = ot.send(options.number_ots);
             write_outputfile_sender(options, output);
         }
         else  // Role::client
         {
             auto choices = parse_inputfile(options);
-            std::vector<bytes_t> output;
-            output.reserve(options.number_ots);
-            for (auto choice : choices)
-                output.push_back(ot.recv(choice));
+            auto output = ot.recv(choices);
             write_outputfile_receiver(options, output);
         }
     }

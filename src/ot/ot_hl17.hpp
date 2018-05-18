@@ -11,8 +11,12 @@ class OT_HL17 : public RandomOT
 public:
     OT_HL17(Connection& connection);
     // void send(const std::vector<bytes_t>&) override;
-    std::vector<bytes_t> send() override;
-    bytes_t recv(size_t) override;
+
+    std::pair<bytes_t, bytes_t> send() override;
+    bytes_t recv(bool) override;
+
+    std::vector<std::pair<bytes_t, bytes_t>> send(size_t) override;
+    std::vector<bytes_t> recv(std::vector<bool>) override;
 private:
 
     Connection& connection_;
@@ -28,13 +32,10 @@ public: // for testing
         curve25519::ge_p3 T;
         // // R
         curve25519::ge_p3 R;
-        // (k_j)
-        std::vector<bytes_t> ks;
-        // (e_j)
     };
     struct Receiver_State
     {
-        int choice;
+        bool choice;
         // x
         uint8_t x[32];
         // S
@@ -48,9 +49,9 @@ public: // for testing
     };
     bytes_t send_0(Sender_State& state);
     void send_1(Sender_State& state);
-    std::vector<bytes_t> send_2(Sender_State& state, const bytes_t& message);
+    std::pair<bytes_t, bytes_t> send_2(Sender_State& state, const bytes_t& message);
 
-    void recv_0(Receiver_State& state, int choice);
+    void recv_0(Receiver_State& state, bool choice);
     bytes_t recv_1(Receiver_State& state, const bytes_t& message);
     bytes_t recv_2(Receiver_State& state);
 };

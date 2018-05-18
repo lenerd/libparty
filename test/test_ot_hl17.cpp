@@ -22,7 +22,7 @@ TEST(OT_HL17_Test, SR0)
     auto res_s = ot.send_2(ss, msg_r1);
     auto res_r = ot.recv_2(rs);
 
-    ASSERT_TRUE(res_r == res_s[choice]);
+    ASSERT_EQ(res_r, res_s.first);
 }
 
 TEST(OT_HL17_Test, SR1)
@@ -43,7 +43,7 @@ TEST(OT_HL17_Test, SR1)
     auto res_s = ot.send_2(ss, msg_r1);
     auto res_r = ot.recv_2(rs);
 
-    ASSERT_TRUE(res_r == res_s[choice]);
+    ASSERT_EQ(res_r, res_s.second);
 }
 
 TEST(OT_HL17_Test, SRConnection0)
@@ -68,7 +68,7 @@ TEST(OT_HL17_Test, SRConnection0)
     auto out_s{fut_s_1.get()};
     auto out_r{fut_r_1.get()};
 
-    ASSERT_EQ(out_r, out_s[choice]);
+    ASSERT_EQ(out_r, out_s.first);
 }
 
 TEST(OT_HL17_Test, SRConnection1)
@@ -93,5 +93,5 @@ TEST(OT_HL17_Test, SRConnection1)
     auto out_s{fut_s_1.get()};
     auto out_r{fut_r_1.get()};
 
-    ASSERT_EQ(out_r, out_s[choice]);
+    ASSERT_EQ(out_r, out_s.second);
 }
