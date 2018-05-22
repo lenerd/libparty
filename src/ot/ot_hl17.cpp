@@ -94,9 +94,6 @@ std::pair<bytes_t, bytes_t> OT_HL17::send_2(Sender_State& state, const bytes_t& 
     hash.final(reinterpret_cast<uint8_t*>(output.first.data()));
 
 
-    hash.clear();
-
-
     // j = 1
     // y*R + (-y)*T = y*(R - T)
     {
