@@ -49,7 +49,8 @@ void hash_point(curve25519::ge_p3& output, const curve25519::ge_p3& input)
     curve25519::x25519_ge_scalarmult_base(&output, hash_output.data());
 }
 
-bytes_t OT_HL17::send_0(Sender_State& state)
+void OT_HL17::send_0(Sender_State& state,
+                     std::array<uint8_t, curve25519_ge_byte_size>& message_out)
 {
     // sample y <- Zp
     curve25519::sc_random(state.y);
@@ -57,9 +58,8 @@ bytes_t OT_HL17::send_0(Sender_State& state)
     // S = g^y
     curve25519::x25519_ge_scalarmult_base(&state.S, state.y);
 
-    bytes_t S_bytes(32);
-    curve25519::ge_p3_tobytes(reinterpret_cast<uint8_t*>(S_bytes.data()), &state.S);
-    return S_bytes;
+    bytes_t S_bytes(curve25519_ge_byte_size);
+    curve25519::ge_p3_tobytes(message_out.data(), &state.S);
 }
 
 void OT_HL17::send_1(Sender_State& state)
@@ -67,10 +67,12 @@ void OT_HL17::send_1(Sender_State& state)
     // T = G(S)
     hash_point(state.T, state.S);
 }
-std::pair<bytes_t, bytes_t> OT_HL17::send_2(Sender_State& state, const bytes_t& message)
+
+std::pair<bytes_t, bytes_t> OT_HL17::send_2(Sender_State& state,
+                                            const std::array<uint8_t, curve25519_ge_byte_size>& message_in)
 {
     // // assert R in GG
-    if (!x25519_ge_frombytes_vartime(&state.R, reinterpret_cast<const uint8_t*>(message.data())))
+    if (!x25519_ge_frombytes_vartime(&state.R, message_in.data()))
         std::terminate();
 
     auto hash(Botan::Blake2b(128));
@@ -80,7 +82,7 @@ std::pair<bytes_t, bytes_t> OT_HL17::send_2(Sender_State& state, const bytes_t& 
     output.first.resize(hash.output_length());
     output.second.resize(hash.output_length());
 
-    std::array<uint8_t, 3*32> hash_input;
+    std::array<uint8_t, 3*curve25519_ge_byte_size> hash_input;
     curve25519::ge_p3_tobytes(hash_input.data(), &state.S);
     curve25519::ge_p3_tobytes(hash_input.data() + 32, &state.R);
 
@@ -149,10 +151,13 @@ void OT_HL17::recv_0(Receiver_State& state, bool choice)
     curve25519::sc_random(state.x);
 }
 
-bytes_t OT_HL17::recv_1(Receiver_State& state, const bytes_t& message)
+
+void OT_HL17::recv_1(Receiver_State& state,
+                     std::array<uint8_t, curve25519_ge_byte_size>& message_out,
+                     const std::array<uint8_t, curve25519_ge_byte_size>& message_in)
 {
     // recv S
-    auto res = curve25519::x25519_ge_frombytes_vartime(&state.S, reinterpret_cast<const uint8_t*>(message.data()));
+    auto res = curve25519::x25519_ge_frombytes_vartime(&state.S, message_in.data());
     // assert S in GG
     if (res == 0)
         std::terminate();
@@ -176,10 +181,7 @@ bytes_t OT_HL17::recv_1(Receiver_State& state, const bytes_t& message)
     }
 
     bytes_t R_bytes(32);
-    curve25519::ge_p3_tobytes(reinterpret_cast<uint8_t*>(R_bytes.data()), &state.R);
-
-    // send R
-    return R_bytes;
+    curve25519::ge_p3_tobytes(message_out.data(), &state.R);
 }
 
 bytes_t OT_HL17::recv_2(Receiver_State& state)
@@ -210,45 +212,46 @@ bytes_t OT_HL17::recv_2(Receiver_State& state)
 std::pair<bytes_t, bytes_t> OT_HL17::send()
 {
     Sender_State state;
-    auto msg_s0 = send_0(state);
-    connection_.send_message(msg_s0);
+    std::array<uint8_t, curve25519_ge_byte_size> msg_s0;
+    std::array<uint8_t, curve25519_ge_byte_size> msg_r1;
+
+    send_0(state, msg_s0);
+    connection_.send(msg_s0.data(), msg_s0.size());
     send_1(state);
-    auto msg_r1 = connection_.recv_message();
+    connection_.recv(msg_r1.data(), msg_r1.size());
     return send_2(state, msg_r1);
 }
 
 bytes_t OT_HL17::recv(bool choice)
 {
     Receiver_State state;
+    std::array<uint8_t, curve25519_ge_byte_size> msg_s0;
+    std::array<uint8_t, curve25519_ge_byte_size> msg_r1;
+
     recv_0(state, choice);
-    auto msg_s0 = connection_.recv_message();
-    auto msg_r1 = recv_1(state, msg_s0);
-    connection_.send_message(msg_r1);
+    connection_.recv(msg_s0.data(), msg_s0.size());
+    recv_1(state, msg_r1, msg_s0);
+    connection_.send(msg_r1.data(), msg_r1.size());
     return recv_2(state);
 }
+
 
 std::vector<std::pair<bytes_t, bytes_t>> OT_HL17::send(size_t number_ots)
 {
     std::vector<Sender_State> states(number_ots);
-    std::vector<bytes_t> msgs_s0(number_ots);
-    std::vector<bytes_t> msgs_r1(number_ots);
+    std::vector<std::array<uint8_t, curve25519_ge_byte_size>> msgs_s0(number_ots);
+    std::vector<std::array<uint8_t, curve25519_ge_byte_size>> msgs_r1(number_ots);
     std::vector<std::pair<bytes_t, bytes_t>> output(number_ots);
     for (size_t i = 0; i < number_ots; ++i)
     {
-        msgs_s0[i] = send_0(states[i]);
+        send_0(states[i], msgs_s0[i]);
     }
-    for (size_t i = 0; i < number_ots; ++i)
-    {
-        connection_.send_message(msgs_s0[i]);
-    }
+    connection_.send(reinterpret_cast<uint8_t*>(msgs_s0.data()), msgs_s0.size() * curve25519_ge_byte_size);
     for (size_t i = 0; i < number_ots; ++i)
     {
         send_1(states[i]);
     }
-    for (size_t i = 0; i < number_ots; ++i)
-    {
-        msgs_r1[i] = connection_.recv_message();
-    }
+    connection_.recv(reinterpret_cast<uint8_t*>(msgs_r1.data()), msgs_r1.size() * curve25519_ge_byte_size);
     for (size_t i = 0; i < number_ots; ++i)
     {
         output[i] = send_2(states[i], msgs_r1[i]);
@@ -260,25 +263,19 @@ std::vector<bytes_t> OT_HL17::recv(std::vector<bool> choices)
 {
     auto number_ots = choices.size();
     std::vector<Receiver_State> states(number_ots);
-    std::vector<bytes_t> msgs_s0(number_ots);
-    std::vector<bytes_t> msgs_r1(number_ots);
+    std::vector<std::array<uint8_t, curve25519_ge_byte_size>> msgs_s0(number_ots);
+    std::vector<std::array<uint8_t, curve25519_ge_byte_size>> msgs_r1(number_ots);
     std::vector<bytes_t> output(number_ots);
     for (size_t i = 0; i < number_ots; ++i)
     {
         recv_0(states[i], choices[i]);
     }
+    connection_.recv(reinterpret_cast<uint8_t*>(msgs_s0.data()), msgs_s0.size() * curve25519_ge_byte_size);
     for (size_t i = 0; i < number_ots; ++i)
     {
-        msgs_s0[i] = connection_.recv_message();
+        recv_1(states[i], msgs_r1[i], msgs_s0[i]);
     }
-    for (size_t i = 0; i < number_ots; ++i)
-    {
-        msgs_r1[i] = recv_1(states[i], msgs_s0[i]);
-    }
-    for (size_t i = 0; i < number_ots; ++i)
-    {
-        connection_.send_message(msgs_r1[i]);
-    }
+    connection_.send(reinterpret_cast<uint8_t*>(msgs_r1.data()), msgs_r1.size() * curve25519_ge_byte_size);
     for (size_t i = 0; i < number_ots; ++i)
     {
         output[i] = recv_2(states[i]);

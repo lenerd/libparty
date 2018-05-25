@@ -14,10 +14,13 @@ static void BM_OT_HL17_no_network(benchmark::State& state) {
         OT_HL17::Sender_State ss;
         OT_HL17::Receiver_State rs;
 
-        auto msg_s0 = ot.send_0(ss);
+        std::array<uint8_t, OT_HL17::curve25519_ge_byte_size> msg_s0;
+        std::array<uint8_t, OT_HL17::curve25519_ge_byte_size> msg_r1;
+
+        ot.send_0(ss, msg_s0);
         ot.send_1(ss);
         ot.recv_0(rs, choice);
-        auto msg_r1 = ot.recv_1(rs, msg_s0);
+        ot.recv_1(rs, msg_r1, msg_s0);
 
         auto res_s = ot.send_2(ss, msg_r1);
         auto res_r = ot.recv_2(rs);
