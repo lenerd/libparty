@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstring>
 #include "dummy_connection.hpp"
 
 DummyConnection::DummyConnection(message_queue_t send_queue, message_queue_t recv_queue)
@@ -26,4 +27,15 @@ void DummyConnection::send_message(const uint8_t *buffer, size_t size)
 bytes_t DummyConnection::recv_message()
 {
     return recv_queue_->dequeue();
+}
+
+void DummyConnection::send(const uint8_t* buffer, size_t length)
+{
+    send_queue_->enqueue(bytes_t(buffer, buffer + length));
+}
+void DummyConnection::recv(uint8_t* buffer, size_t length)
+{
+    auto tmp = recv_queue_->dequeue();
+    assert(tmp.size() == length);
+    std::memcpy(buffer, tmp.data(), length);
 }

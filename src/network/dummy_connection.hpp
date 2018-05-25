@@ -25,6 +25,8 @@ public:
 
     virtual void send_message(const uint8_t*, size_t) override;
     virtual bytes_t recv_message() override;
+    virtual void send(const uint8_t* buffer, size_t length) override;
+    virtual void recv(uint8_t* buffer, size_t length) override;
 
 // private:
     message_queue_t send_queue_;

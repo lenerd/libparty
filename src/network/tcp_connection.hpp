@@ -37,8 +37,17 @@ public:
     static Conn_p listen(boost::asio::io_context& io_service,
             std::string address, uint16_t port);
 
+    /**
+     * Send/receive message prefixed with its length.
+     */
     virtual void send_message(const uint8_t * buffer, size_t length) override;
     virtual bytes_t recv_message() override;
+
+    /**
+     * Send/receive without length prefix.
+     */
+    void send(const uint8_t* buffer, size_t length) override;
+    void recv(uint8_t* buffer, size_t length) override;
 private:
 
     void send_length(size_t length);

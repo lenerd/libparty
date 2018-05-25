@@ -74,3 +74,13 @@ bytes_t TCPConnection::recv_message()
     boost::asio::read(socket_, boost::asio::buffer(buffer));
     return buffer;
 }
+
+void TCPConnection::send(const uint8_t* buffer, size_t length)
+{
+    boost::asio::write(socket_, boost::asio::buffer(buffer, length));
+}
+
+void TCPConnection::recv(uint8_t* buffer, size_t length)
+{
+    boost::asio::read(socket_, boost::asio::buffer(buffer, length));
+}

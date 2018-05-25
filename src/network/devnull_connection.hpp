@@ -22,6 +22,12 @@ public:
     {
         return bytes_t{};
     }
+    virtual void send(const uint8_t* buffer, size_t length) override
+    {
+    }
+    virtual void recv(uint8_t* buffer, size_t length) override
+    {
+    }
 };
 
 #endif // DEVNULL_CONNECTION_HPP

@@ -42,6 +42,12 @@ public:
      * Receive a message
      */
     virtual bytes_t recv_message() = 0;
+
+    /**
+     * Send/receive without length prefix.
+     */
+    virtual void send(const uint8_t* buffer, size_t length) = 0;
+    virtual void recv(uint8_t* buffer, size_t length) = 0;
 };
 
 using Conn_p = std::shared_ptr<Connection>;
