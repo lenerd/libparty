@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "util.h"
 
 #include "stdio.h"
 #include "stdlib.h"
@@ -6,7 +6,6 @@
 void random_bytes(void* buf, size_t nbytes)
 {
     FILE* f = fopen("/dev/urandom", "r");
-    /* FILE* f = fopen("/dev/zero", "r"); */
     if (f == NULL)
     {
         perror("fopen(\"/dev/urandom\", \"r\")");
