@@ -84,3 +84,13 @@ void TCPConnection::recv(uint8_t* buffer, size_t length)
 {
     boost::asio::read(socket_, boost::asio::buffer(buffer, length));
 }
+
+std::future<size_t> TCPConnection::async_send(const uint8_t* buffer, size_t length)
+{
+    return boost::asio::async_write(socket_, boost::asio::buffer(buffer, length),
+            boost::asio::use_future);
+}
+std::future<size_t> TCPConnection::async_recv(uint8_t* buffer, size_t length)
+{
+    return boost::asio::async_read(socket_, boost::asio::buffer(buffer, length), boost::asio::use_future);
+}

@@ -17,6 +17,8 @@ public:
 
     std::vector<std::pair<bytes_t, bytes_t>> send(size_t) override;
     std::vector<bytes_t> recv(std::vector<bool>) override;
+    std::vector<std::pair<bytes_t, bytes_t>> async_send(size_t);
+    std::vector<bytes_t> async_recv(std::vector<bool>);
 private:
 
     Connection& connection_;

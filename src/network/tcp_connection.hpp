@@ -48,6 +48,9 @@ public:
      */
     void send(const uint8_t* buffer, size_t length) override;
     void recv(uint8_t* buffer, size_t length) override;
+
+    std::future<size_t> async_send(const uint8_t* buffer, size_t length) override;
+    std::future<size_t> async_recv(uint8_t* buffer, size_t length) override;
 private:
 
     void send_length(size_t length);

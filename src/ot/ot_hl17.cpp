@@ -7,6 +7,7 @@
 #include "ot_hl17.hpp"
 
 #include <iostream>
+#include <chrono>
 
 
 OT_HL17::OT_HL17(Connection& connection) : connection_(connection)
@@ -280,5 +281,107 @@ std::vector<bytes_t> OT_HL17::recv(std::vector<bool> choices)
     {
         output[i] = recv_2(states[i]);
     }
+    return output;
+}
+
+
+std::string get_time(std::chrono::time_point<std::chrono::high_resolution_clock> start)
+{
+    auto now = std::chrono::high_resolution_clock::now();
+    auto us = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
+    return std::to_string(us);
+}
+
+
+std::vector<std::pair<bytes_t, bytes_t>> OT_HL17::async_send(size_t number_ots)
+{
+    std::vector<Sender_State> states(number_ots);
+    std::vector<std::array<uint8_t, curve25519_ge_byte_size>> msgs_s0(number_ots);
+    std::vector<std::array<uint8_t, curve25519_ge_byte_size>> msgs_r1(number_ots);
+    std::vector<std::pair<bytes_t, bytes_t>> output(number_ots);
+
+    auto t_start = std::chrono::high_resolution_clock::now();
+
+    std::cerr << get_time(t_start) << " [S] compute send_0\n";
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        send_0(states[i], msgs_s0[i]);
+    }
+
+    std::cerr << get_time(t_start) << " [S] async send msg_s0\n";
+    auto fut_send_msg_s0 = connection_.async_send(reinterpret_cast<uint8_t*>(msgs_s0.data()), msgs_s0.size() * curve25519_ge_byte_size);
+    std::cerr << get_time(t_start) << " [S] async recv msg_r1\n";
+    auto fut_recv_msg_r1 = connection_.async_recv(reinterpret_cast<uint8_t*>(msgs_r1.data()), msgs_r1.size() * curve25519_ge_byte_size);
+
+
+    std::cerr << get_time(t_start) << " [S] compute send_1\n";
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        send_1(states[i]);
+    }
+
+    std::cerr << get_time(t_start) << " [S] wait for recv msg_r1\n";
+    auto msg_r1_size = fut_recv_msg_r1.get();
+    assert(msg_r1_size == msgs_r1.size() * curve25519_ge_byte_size);
+
+    std::cerr << get_time(t_start) << " [S] compute send_2\n";
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        output[i] = send_2(states[i], msgs_r1[i]);
+    }
+
+    std::cerr << get_time(t_start) << " [S] wait for send msg_s0\n";
+    auto msg_s0_size = fut_send_msg_s0.get();
+    assert(msg_s0_size == msgs_s0.size() * curve25519_ge_byte_size);
+
+    std::cerr << get_time(t_start) << " [S] end\n";
+
+    return output;
+}
+
+std::vector<bytes_t> OT_HL17::async_recv(std::vector<bool> choices)
+{
+    auto number_ots = choices.size();
+    std::vector<Receiver_State> states(number_ots);
+    std::vector<std::array<uint8_t, curve25519_ge_byte_size>> msgs_s0(number_ots);
+    std::vector<std::array<uint8_t, curve25519_ge_byte_size>> msgs_r1(number_ots);
+    std::vector<bytes_t> output(number_ots);
+
+    auto t_start = std::chrono::high_resolution_clock::now();
+
+    std::cerr << get_time(t_start) << " [R] async recv msg_s0\n";
+    auto fut_recv_msg_s0 = connection_.async_recv(reinterpret_cast<uint8_t*>(msgs_s0.data()), msgs_s0.size() * curve25519_ge_byte_size);
+
+    std::cerr << get_time(t_start) << " [R] compute recv_0\n";
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        recv_0(states[i], choices[i]);
+    }
+
+    std::cerr << get_time(t_start) << " [R] wait for recv msg_s0\n";
+    auto msg_s0_size = fut_recv_msg_s0.get();
+    assert(msg_s0_size == msgs_s0.size() * curve25519_ge_byte_size);
+
+    std::cerr << get_time(t_start) << " [R] compute recv_1\n";
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        recv_1(states[i], msgs_r1[i], msgs_s0[i]);
+    }
+
+    std::cerr << get_time(t_start) << " [R] async send msg_r1\n";
+    auto fut_send_msg_r1 = connection_.async_send(reinterpret_cast<uint8_t*>(msgs_r1.data()), msgs_r1.size() * curve25519_ge_byte_size);
+
+    std::cerr << get_time(t_start) << " [R] compute recv_2\n";
+    for (size_t i = 0; i < number_ots; ++i)
+    {
+        output[i] = recv_2(states[i]);
+    }
+
+    std::cerr << get_time(t_start) << " [R] wait for send msg_r1\n";
+    auto msg_r1_size = fut_send_msg_r1.get();
+    assert(msg_r1_size == msgs_s0.size() * curve25519_ge_byte_size);
+
+    std::cerr << get_time(t_start) << " [R] end\n";
+
     return output;
 }

@@ -1,6 +1,7 @@
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
 
+#include <future>
 #include <memory>
 #include "util/util.hpp"
 
@@ -48,6 +49,20 @@ public:
      */
     virtual void send(const uint8_t* buffer, size_t length) = 0;
     virtual void recv(uint8_t* buffer, size_t length) = 0;
+    virtual std::future<size_t> async_send(const uint8_t* buffer, size_t length)
+    {
+        std::promise<size_t> promise;
+        send(buffer, length);
+        promise.set_value(length);
+        return promise.get_future();
+    }
+    virtual std::future<size_t> async_recv(uint8_t* buffer, size_t length)
+    {
+        std::promise<size_t> promise;
+        recv(buffer, length);
+        promise.set_value(length);
+        return promise.get_future();
+    }
 };
 
 using Conn_p = std::shared_ptr<Connection>;
