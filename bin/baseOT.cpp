@@ -126,7 +126,14 @@ int main(int argc, char* argv[])
             std::vector<std::pair<bytes_t, bytes_t>> output;
             if (options.async_io)
             {
-                output = ot.async_send(options.number_ots);
+                if (options.threads == 1)
+                {
+                    output = ot.async_send(options.number_ots);
+                }
+                else
+                {
+                    output = ot.parallel_send(options.number_ots, options.threads);
+                }
             }
             else
             {
@@ -140,7 +147,14 @@ int main(int argc, char* argv[])
             std::vector<bytes_t> output;
             if (options.async_io)
             {
-                output = ot.async_recv(choices);
+                if (options.threads == 1)
+                {
+                    output = ot.async_recv(choices);
+                }
+                else
+                {
+                    output = ot.parallel_recv(choices, options.threads);
+                }
             }
             else
             {

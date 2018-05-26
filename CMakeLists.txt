@@ -18,9 +18,10 @@ add_library(party
     src/network/dummy_connection.cpp
     src/network/tcp_connection.cpp
     src/ot/ot_hl17.cpp
+    src/util/options.cpp
+    src/util/threading.cpp
     src/util/util.c
     src/util/util.cpp
-    src/util/options.cpp
 )
 target_compile_features(party PUBLIC cxx_std_17)
 target_include_directories(party PRIVATE src)

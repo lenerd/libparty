@@ -1,6 +1,7 @@
 #ifndef OT_HL17_HPP
 #define OT_HL17_HPP
 
+#include <boost/asio/thread_pool.hpp>
 #include "ot.hpp"
 #include "network/connection.hpp"
 #include "curve25519/mycurve25519.h"
@@ -16,9 +17,13 @@ public:
     bytes_t recv(bool) override;
 
     std::vector<std::pair<bytes_t, bytes_t>> send(size_t) override;
-    std::vector<bytes_t> recv(std::vector<bool>) override;
+    std::vector<bytes_t> recv(const std::vector<bool>&) override;
     std::vector<std::pair<bytes_t, bytes_t>> async_send(size_t);
     std::vector<bytes_t> async_recv(std::vector<bool>);
+    std::vector<std::pair<bytes_t, bytes_t>> parallel_send(size_t, size_t number_threads);
+    std::vector<bytes_t> parallel_recv(const std::vector<bool>&, size_t number_threads);
+    std::vector<std::pair<bytes_t, bytes_t>> parallel_send(size_t, size_t number_threads, boost::asio::thread_pool& thread_pool);
+    std::vector<bytes_t> parallel_recv(const std::vector<bool>&, size_t number_threads, boost::asio::thread_pool& thread_pool);
 private:
 
     Connection& connection_;
