@@ -63,13 +63,13 @@ TEST(OT_HL17_Test, SRConnection0)
     int choice = 0;
 
     auto fut_s_1{std::async(std::launch::async,
-        [this, &ot_sender]
+        [&ot_sender]
         {
             return ot_sender.send();
         })};
 
     auto fut_r_1{std::async(std::launch::async,
-        [this, &ot_receiver, choice]
+        [&ot_receiver, choice]
         {
             return ot_receiver.recv(choice);
         })};
@@ -88,13 +88,13 @@ TEST(OT_HL17_Test, SRConnection1)
     int choice = 1;
 
     auto fut_s_1{std::async(std::launch::async,
-        [this, &ot_sender]
+        [&ot_sender]
         {
             return ot_sender.send();
         })};
 
     auto fut_r_1{std::async(std::launch::async,
-        [this, &ot_receiver, choice]
+        [&ot_receiver, choice]
         {
             return ot_receiver.recv(choice);
         })};

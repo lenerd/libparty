@@ -22,10 +22,10 @@ public:
     {
         return bytes_t{};
     }
-    virtual void send(const uint8_t* buffer, size_t length) override
+    virtual void send(const uint8_t*, size_t) override
     {
     }
-    virtual void recv(uint8_t* buffer, size_t length) override
+    virtual void recv(uint8_t*, size_t) override
     {
     }
 };

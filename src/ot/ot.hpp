@@ -8,6 +8,7 @@
 class OT
 {
 public:
+    virtual ~OT() = default;
     virtual void send(const std::vector<bytes_t>&) = 0;
     virtual bytes_t recv(size_t) = 0;
 };
@@ -15,6 +16,7 @@ public:
 class RandomOT
 {
 public:
+    virtual ~RandomOT() = default;
     virtual std::pair<bytes_t, bytes_t> send() = 0;
     virtual bytes_t recv(bool) = 0;
 
