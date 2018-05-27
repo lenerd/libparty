@@ -1,6 +1,6 @@
 #include <benchmark/benchmark.h>
 #include <botan/blake2b.h>
-#include "util/util.h"
+#include "curve25519/util.h"
 
 
 static void BM_Hash_Blake_copy_state(benchmark::State& state)
@@ -10,7 +10,7 @@ static void BM_Hash_Blake_copy_state(benchmark::State& state)
     std::array<uint8_t, 16> hash_output_2;
 
     random_bytes(hash_input.data(), hash_input.size());
-    
+
     for (auto _ : state)
     {
         auto hash = Botan::Blake2b(128);
