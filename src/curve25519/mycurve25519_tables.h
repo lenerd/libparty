@@ -1,4 +1,6 @@
-// Copied from BoringSSL
+// This file was taken from the BoringSSL project (commit
+// 982279b366eccd9e4146036c7fcda7f72d2cbdff) -- they used Fiat-Crypto to
+// generate it.
 //
 // The MIT License (MIT)
 //

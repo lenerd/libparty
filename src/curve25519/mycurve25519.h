@@ -1,7 +1,10 @@
-// Copied from BoringSSL.
+// This file was taken from the BoringSSL project (commit
+// 982279b366eccd9e4146036c7fcda7f72d2cbdff) -- they used Fiat-Crypto to
+// generate it -- and adapted for use in this project.
 //
 // The MIT License (MIT)
 //
+// Copyright (c) 2018 Lennart Braun
 // Copyright (c) 2015-2016 the fiat-crypto authors (see the AUTHORS file).
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -125,8 +128,6 @@ void x25519_ge_scalarmult_base(ge_p3 *h, const uint8_t a[32]);
 void x25519_ge_scalarmult(ge_p2 *r, const uint8_t *scalar, const ge_p3 *A);
 void x25519_sc_reduce(uint8_t s[64]);
 
-
-// added
 
 typedef struct {
     uint8_t s[32];

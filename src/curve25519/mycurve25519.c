@@ -1,7 +1,10 @@
-// Copied from BoringSSL
+// This file was taken from the BoringSSL project (commit
+// 982279b366eccd9e4146036c7fcda7f72d2cbdff) -- they used Fiat-Crypto to
+// generate it -- and adapted for use in this project.
 //
 // The MIT License (MIT)
 //
+// Copyright (c) 2018 Lennart Braun
 // Copyright (c) 2015-2016 the fiat-crypto authors (see the AUTHORS file).
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
