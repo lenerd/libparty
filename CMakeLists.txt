@@ -3,6 +3,11 @@
 cmake_minimum_required(VERSION 3.11)
 project(libmpc VERSION 1.0.0 LANGUAGES CXX C)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DBORINGSSL_HAS_UINT128=1")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fomit-frame-pointer")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Ofast")
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Weffc++")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
 # set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=thread")
@@ -23,7 +28,7 @@ add_library(party
     src/util/threading.cpp
     src/util/util.cpp
 )
-target_compile_features(party PUBLIC cxx_std_17)
+target_compile_features(party PUBLIC cxx_std_17 c_std_11)
 target_include_directories(party PRIVATE src)
 target_include_directories(party PRIVATE /usr/include/botan-2)
 target_link_libraries(party botan-2)

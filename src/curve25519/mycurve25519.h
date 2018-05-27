@@ -37,6 +37,7 @@ extern "C" {
 
 
 #if defined(BORINGSSL_HAS_UINT128)
+typedef __uint128_t uint128_t;
 #define BORINGSSL_CURVE25519_64BIT
 #endif
 
