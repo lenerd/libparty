@@ -37,7 +37,7 @@
 
 #include "mycurve25519.h"
 #include "./mycurve25519_tables.h"  // Various pre-computed constants.
-#include "util/util.h"
+#include "util.h"
 
 
 // Low-level intrinsic operations (hand-written).
