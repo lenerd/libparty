@@ -24,6 +24,7 @@
 #define OT_HPP
 
 #include <vector>
+#include <boost/asio/thread_pool.hpp>
 #include "util/util.hpp"
 
 
@@ -39,12 +40,30 @@ class RandomOT
 {
 public:
     virtual ~RandomOT() = default;
+
+    /**
+     * Send/receive for a single random OT.
+     */
     virtual std::pair<bytes_t, bytes_t> send() = 0;
     virtual bytes_t recv(bool) = 0;
 
-    // batch
+    /**
+     * Send/receive parts of the random OT protocol (batch version).
+     */
     virtual std::vector<std::pair<bytes_t, bytes_t>> send(size_t) = 0;
     virtual std::vector<bytes_t> recv(const std::vector<bool>&) = 0;
+    /**
+     * Parallelized version of batch send/receive.
+     * These methods will create a new thread pool.
+     */
+    virtual std::vector<std::pair<bytes_t, bytes_t>> parallel_send(size_t, size_t number_threads) = 0;
+    virtual std::vector<bytes_t> parallel_recv(const std::vector<bool>&, size_t number_threads) = 0;
+    /**
+     * Parallelized version of batch send/receive.
+     * These methods will use the given thread pool.
+     */
+    virtual std::vector<std::pair<bytes_t, bytes_t>> parallel_send(size_t, size_t number_threads, boost::asio::thread_pool& thread_pool) = 0;
+    virtual std::vector<bytes_t> parallel_recv(const std::vector<bool>&, size_t number_threads, boost::asio::thread_pool& thread_pool) = 0;
 };
 
 

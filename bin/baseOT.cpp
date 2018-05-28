@@ -40,7 +40,6 @@ struct Options
     size_t threads;
     std::string input_file;
     std::string output_file;
-    bool async_io;
 };
 
 Options parse_arguments(int argc, char* argv[])
@@ -55,7 +54,6 @@ Options parse_arguments(int argc, char* argv[])
         ("threads,t", po::value<size_t>()->default_value(1), "Number of threads")
         ("input,i", po::value<std::string>()->default_value("in.txt"), "Input text file (only for receiver)")
         ("output,o", po::value<std::string>()->default_value("out.txt"), "Output text file (for sender and receiver resp.)")
-        ("async", po::value<bool>()->default_value(false), "Use asynchonous I/O")
     ;
     po::variables_map vm;
     try
@@ -83,7 +81,6 @@ Options parse_arguments(int argc, char* argv[])
     options.threads = vm["threads"].as<size_t>();
     options.input_file = vm["input"].as<std::string>();
     options.output_file = vm["output"].as<std::string>();
-    options.async_io = vm["async"].as<bool>();
     return options;
 }
 
@@ -132,10 +129,7 @@ int main(int argc, char* argv[])
     try
     {
         auto work = boost::asio::make_work_guard(io_context);
-        if (options.async_io)
-        {
-            io_thread = std::thread([&io_context]{io_context.run();});
-        }
+        io_thread = std::thread([&io_context]{io_context.run();});
 
         auto connection(TCPConnection::from_role(options.role,
                                                  io_context,
@@ -146,42 +140,20 @@ int main(int argc, char* argv[])
         if (options.role == Role::server)
         {
             std::vector<std::pair<bytes_t, bytes_t>> output;
-            if (options.async_io)
-            {
-                if (options.threads == 1)
-                {
-                    output = ot.async_send(options.number_ots);
-                }
-                else
-                {
-                    output = ot.parallel_send(options.number_ots, options.threads);
-                }
-            }
-            else
-            {
+            if (options.threads == 1)
                 output = ot.send(options.number_ots);
-            }
+            else
+                output = ot.parallel_send(options.number_ots, options.threads);
             write_outputfile_sender(options, output);
         }
         else  // Role::client
         {
             auto choices = parse_inputfile(options);
             std::vector<bytes_t> output;
-            if (options.async_io)
-            {
-                if (options.threads == 1)
-                {
-                    output = ot.async_recv(choices);
-                }
-                else
-                {
-                    output = ot.parallel_recv(choices, options.threads);
-                }
-            }
-            else
-            {
+            if (options.threads == 1)
                 output = ot.recv(choices);
-            }
+            else
+                output = ot.parallel_recv(choices, options.threads);
             write_outputfile_receiver(options, output);
         }
 
@@ -190,11 +162,9 @@ int main(int argc, char* argv[])
     {
         std::cerr << "Caught exception: " << e.what() << "\n";
     }
-    if (options.async_io)
-    {
-        io_context.stop();
-        io_thread.join();
-    }
+
+    io_context.stop();
+    io_thread.join();
 
     return EXIT_SUCCESS;
 }

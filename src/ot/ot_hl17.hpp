@@ -23,29 +23,43 @@
 #ifndef OT_HL17_HPP
 #define OT_HL17_HPP
 
-#include <boost/asio/thread_pool.hpp>
 #include "ot.hpp"
 #include "network/connection.hpp"
 #include "curve25519/mycurve25519.h"
 
 
+/**
+ * A random OT implementation based on the protocol by Hauck and Loss (2017).
+ * https://eprint.iacr.org/2017/1011
+ */
 class OT_HL17 : public RandomOT
 {
 public:
     OT_HL17(Connection& connection);
-    // void send(const std::vector<bytes_t>&) override;
 
+    /**
+     * Send/receive for a single random OT.
+     */
     std::pair<bytes_t, bytes_t> send() override;
     bytes_t recv(bool) override;
 
+    /**
+     * Send/receive parts of the random OT protocol (batch version).
+     */
     std::vector<std::pair<bytes_t, bytes_t>> send(size_t) override;
     std::vector<bytes_t> recv(const std::vector<bool>&) override;
-    std::vector<std::pair<bytes_t, bytes_t>> async_send(size_t);
-    std::vector<bytes_t> async_recv(std::vector<bool>);
-    std::vector<std::pair<bytes_t, bytes_t>> parallel_send(size_t, size_t number_threads);
-    std::vector<bytes_t> parallel_recv(const std::vector<bool>&, size_t number_threads);
-    std::vector<std::pair<bytes_t, bytes_t>> parallel_send(size_t, size_t number_threads, boost::asio::thread_pool& thread_pool);
-    std::vector<bytes_t> parallel_recv(const std::vector<bool>&, size_t number_threads, boost::asio::thread_pool& thread_pool);
+    /**
+     * Parallelized version of batch send/receive.
+     * These methods will create a new thread pool.
+     */
+    std::vector<std::pair<bytes_t, bytes_t>> parallel_send(size_t, size_t number_threads) override;
+    std::vector<bytes_t> parallel_recv(const std::vector<bool>&, size_t number_threads) override;
+    /**
+     * Parallelized version of batch send/receive.
+     * These methods will use the given thread pool.
+     */
+    std::vector<std::pair<bytes_t, bytes_t>> parallel_send(size_t, size_t number_threads, boost::asio::thread_pool& thread_pool) override;
+    std::vector<bytes_t> parallel_recv(const std::vector<bool>&, size_t number_threads, boost::asio::thread_pool& thread_pool) override;
 private:
 
     Connection& connection_;
@@ -77,12 +91,19 @@ public: // for testing
         // e_c
     };
     static const size_t curve25519_ge_byte_size = 32;
+
+    /**
+     * Parts of the sender side.
+     */
     void send_0(Sender_State& state,
                 std::array<uint8_t, curve25519_ge_byte_size>& message_out);
     void send_1(Sender_State& state);
     std::pair<bytes_t, bytes_t> send_2(Sender_State& state,
                                        const std::array<uint8_t, curve25519_ge_byte_size>& message_in);
 
+    /**
+     * Parts of the receiver side.
+     */
     void recv_0(Receiver_State& state, bool choice);
     void recv_1(Receiver_State& state,
                 std::array<uint8_t, curve25519_ge_byte_size>& message_out,
