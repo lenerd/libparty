@@ -31,7 +31,11 @@ libparty.a: $(OBJECTS)
 %.cpp.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $^
 
+submission.zip: clean
+	7z a submission.zip src bin Makefile benchmarking
+
 clean:
 	find bin/ src/ -iname "*.o" -delete
 	rm -f libparty.a
 	rm -f baseOT
+	rm -f submission.zip
