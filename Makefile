@@ -32,7 +32,7 @@ libparty.a: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -c -o $@ $^
 
 submission.zip: clean
-	7z a submission.zip src bin Makefile benchmarking
+	7z a submission.zip src bin Makefile benchmarking README
 
 clean:
 	find bin/ src/ -iname "*.o" -delete
