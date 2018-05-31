@@ -93,6 +93,11 @@ public: // for testing
     static const size_t curve25519_ge_byte_size = 32;
 
     /**
+     * Hash G -> G
+     */
+    void hash_point(curve25519::ge_p3& output, const curve25519::ge_p3& input);
+
+    /**
      * Parts of the sender side.
      */
     void send_0(Sender_State& state,

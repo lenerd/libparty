@@ -44,7 +44,7 @@ OT_HL17::OT_HL17(Connection& connection) : connection_(connection)
 // * random oracle H: GG^3 -> K
 
 
-void hash_point(curve25519::ge_p3& output, const curve25519::ge_p3& input)
+void OT_HL17::hash_point(curve25519::ge_p3& output, const curve25519::ge_p3& input)
 {
     std::array<uint8_t, 32> hash_input;
     std::array<uint8_t, 64> hash_output{};
@@ -67,7 +67,6 @@ void OT_HL17::send_0(Sender_State& state,
     // S = g^y
     curve25519::x25519_ge_scalarmult_base(&state.S, state.y);
 
-    bytes_t S_bytes(curve25519_ge_byte_size);
     curve25519::ge_p3_tobytes(message_out.data(), &state.S);
 }
 
