@@ -24,6 +24,7 @@ add_library(party
     src/network/dummy_connection.cpp
     src/network/tcp_connection.cpp
     src/ot/ot.cpp
+    src/ot/ot_co15.cpp
     src/ot/ot_hl17.cpp
     src/util/options.cpp
     src/util/threading.cpp
@@ -40,7 +41,12 @@ add_executable(baseOT bin/baseOT.cpp)
 target_include_directories(baseOT PRIVATE src)
 target_link_libraries(baseOT party)
 
-add_executable(test test/test.cpp test/test_curve25519.cpp test/test_ot_hl17.cpp)
+add_executable(test
+    test/test.cpp
+    test/test_curve25519.cpp
+    test/test_ot_co15.cpp
+    test/test_ot_hl17.cpp
+)
 target_include_directories(test PRIVATE src)
 target_link_libraries(test party)
 target_link_libraries(test gtest)
