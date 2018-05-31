@@ -23,6 +23,7 @@ add_library(party
     src/curve25519/util.c
     src/network/dummy_connection.cpp
     src/network/tcp_connection.cpp
+    src/ot/ot.cpp
     src/ot/ot_hl17.cpp
     src/util/options.cpp
     src/util/threading.cpp

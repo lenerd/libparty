@@ -24,8 +24,12 @@
 #define OT_HPP
 
 #include <vector>
-#include <boost/asio/thread_pool.hpp>
 #include "util/util.hpp"
+
+// forward declare boost::asio::threadpool
+namespace boost { namespace asio {
+    class thread_pool;
+} }
 
 
 class OT
@@ -56,8 +60,8 @@ public:
      * Parallelized version of batch send/receive.
      * These methods will create a new thread pool.
      */
-    virtual std::vector<std::pair<bytes_t, bytes_t>> parallel_send(size_t, size_t number_threads) = 0;
-    virtual std::vector<bytes_t> parallel_recv(const std::vector<bool>&, size_t number_threads) = 0;
+    virtual std::vector<std::pair<bytes_t, bytes_t>> parallel_send(size_t, size_t number_threads);
+    virtual std::vector<bytes_t> parallel_recv(const std::vector<bool>&, size_t number_threads);
     /**
      * Parallelized version of batch send/receive.
      * These methods will use the given thread pool.

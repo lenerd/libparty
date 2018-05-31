@@ -52,8 +52,8 @@ public:
      * Parallelized version of batch send/receive.
      * These methods will create a new thread pool.
      */
-    std::vector<std::pair<bytes_t, bytes_t>> parallel_send(size_t, size_t number_threads) override;
-    std::vector<bytes_t> parallel_recv(const std::vector<bool>&, size_t number_threads) override;
+    using RandomOT::parallel_send;
+    using RandomOT::parallel_recv;
     /**
      * Parallelized version of batch send/receive.
      * These methods will use the given thread pool.

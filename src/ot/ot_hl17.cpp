@@ -293,13 +293,6 @@ std::vector<bytes_t> OT_HL17::recv(const std::vector<bool>& choices)
     return output;
 }
 
-std::vector<std::pair<bytes_t, bytes_t>> OT_HL17::parallel_send(size_t number_ots, size_t number_threads)
-{
-    boost::asio::thread_pool thread_pool(number_threads);
-    auto output = parallel_send(number_ots, number_threads, thread_pool);
-    thread_pool.join();
-    return output;
-}
 
 std::vector<std::pair<bytes_t, bytes_t>> OT_HL17::parallel_send(size_t number_ots, size_t number_threads, boost::asio::thread_pool& thread_pool)
 {
@@ -327,13 +320,7 @@ std::vector<std::pair<bytes_t, bytes_t>> OT_HL17::parallel_send(size_t number_ot
     return output;
 }
 
-std::vector<bytes_t> OT_HL17::parallel_recv(const std::vector<bool>& choices, size_t number_threads)
-{
-    boost::asio::thread_pool thread_pool(number_threads);
-    auto output = parallel_recv(choices, number_threads, thread_pool);
-    thread_pool.join();
-    return output;
-}
+
 std::vector<bytes_t> OT_HL17::parallel_recv(const std::vector<bool>& choices, size_t number_threads, boost::asio::thread_pool& thread_pool)
 {
     auto number_ots = choices.size();
