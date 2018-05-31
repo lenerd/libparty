@@ -20,8 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "options.hpp"
+#include <boost/algorithm/string.hpp>
 #include <boost/program_options/errors.hpp>
+#include "options.hpp"
 
 namespace po = boost::program_options;
 
@@ -48,6 +49,35 @@ std::ostream& operator<<(std::ostream &os, const Role &role)
             break;
         case Role::client:
             os << "client";
+            break;
+    }
+    return os;
+}
+
+
+std::istream& operator>>(std::istream &is, OT_Protocol &ot)
+{
+    std::string token;
+    is >> token;
+    boost::algorithm::to_lower(token);
+    if (token == "co15" || token == "simpleot")
+        ot = OT_Protocol::CO15;
+    else if (token == "hl17")
+        ot = OT_Protocol::HL17;
+    else
+        throw po::invalid_option_value(token);
+    return is;
+}
+
+std::ostream& operator<<(std::ostream &os, const OT_Protocol &ot)
+{
+    switch (ot)
+    {
+        case OT_Protocol::CO15:
+            os << "CO15";
+            break;
+        case OT_Protocol::HL17:
+            os << "HL17";
             break;
     }
     return os;

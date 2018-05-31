@@ -38,9 +38,20 @@ enum class Role
 };
 
 /**
- * iostream support for the Role and UIType enums
+ * A protocol for oblivious transfer.
+ */
+enum class OT_Protocol
+{
+    CO15,
+    HL17,
+};
+
+/**
+ * iostream support for the enums.
  */
 std::istream& operator>>(std::istream &is, Role &role);
 std::ostream& operator<<(std::ostream &os, const Role &role);
+std::istream& operator>>(std::istream &is, OT_Protocol &ot);
+std::ostream& operator<<(std::ostream &os, const OT_Protocol &ot);
 
 #endif // OPTIONS_HPP

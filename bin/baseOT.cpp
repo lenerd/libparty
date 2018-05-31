@@ -25,6 +25,7 @@
 #include <fstream>
 #include <boost/program_options.hpp>
 #include "network/tcp_connection.hpp"
+#include "ot/ot_co15.hpp"
 #include "ot/ot_hl17.hpp"
 #include "util/options.hpp"
 
@@ -40,6 +41,7 @@ struct Options
     size_t threads;
     std::string input_file;
     std::string output_file;
+    OT_Protocol ot_protocol;
 };
 
 Options parse_arguments(int argc, char* argv[])
@@ -54,6 +56,7 @@ Options parse_arguments(int argc, char* argv[])
         ("threads,t", po::value<size_t>()->default_value(1), "Number of threads")
         ("input,i", po::value<std::string>()->default_value("in.txt"), "Input text file (only for receiver)")
         ("output,o", po::value<std::string>()->default_value("out.txt"), "Output text file (for sender and receiver resp.)")
+        ("ot", po::value<OT_Protocol>()->default_value(OT_Protocol::HL17), "OT Protocol to use")
     ;
     po::variables_map vm;
     try
@@ -81,6 +84,7 @@ Options parse_arguments(int argc, char* argv[])
     options.threads = vm["threads"].as<size_t>();
     options.input_file = vm["input"].as<std::string>();
     options.output_file = vm["output"].as<std::string>();
+    options.ot_protocol = vm["ot"].as<OT_Protocol>();
     return options;
 }
 
@@ -135,15 +139,22 @@ int main(int argc, char* argv[])
                                                  io_context,
                                                  options.address,
                                                  options.port));
-        OT_HL17 ot{*connection};
+        std::unique_ptr<RandomOT> ot;
+        switch (options.ot_protocol)
+        {
+            case OT_Protocol::CO15:
+                ot = std::make_unique<OT_CO15>(*connection);
+            case OT_Protocol::HL17:
+                ot = std::make_unique<OT_HL17>(*connection);
+        };
 
         if (options.role == Role::server)
         {
             std::vector<std::pair<bytes_t, bytes_t>> output;
             if (options.threads == 1)
-                output = ot.send(options.number_ots);
+                output = ot->send(options.number_ots);
             else
-                output = ot.parallel_send(options.number_ots, options.threads);
+                output = ot->parallel_send(options.number_ots, options.threads);
             write_outputfile_sender(options, output);
         }
         else  // Role::client
@@ -151,9 +162,9 @@ int main(int argc, char* argv[])
             auto choices = parse_inputfile(options);
             std::vector<bytes_t> output;
             if (options.threads == 1)
-                output = ot.recv(choices);
+                output = ot->recv(choices);
             else
-                output = ot.parallel_recv(choices, options.threads);
+                output = ot->parallel_recv(choices, options.threads);
             write_outputfile_receiver(options, output);
         }
 
