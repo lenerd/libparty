@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <chrono>
 #include <cstddef>
 #include <iostream>
 #include <fstream>
@@ -135,10 +136,15 @@ int main(int argc, char* argv[])
         auto work = boost::asio::make_work_guard(io_context);
         io_thread = std::thread([&io_context]{io_context.run();});
 
+        std::chrono::high_resolution_clock clock;
+
         auto connection(TCPConnection::from_role(options.role,
                                                  io_context,
                                                  options.address,
                                                  options.port));
+
+        auto t_start = clock.now();
+
         std::unique_ptr<RandomOT> ot;
         switch (options.ot_protocol)
         {
@@ -167,6 +173,16 @@ int main(int argc, char* argv[])
                 output = ot->parallel_recv(choices, options.threads);
             write_outputfile_receiver(options, output);
         }
+        auto t_end = clock.now();
+        auto duration = t_end - t_start;
+        auto time_total = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+        auto time_per_ot = time_total / options.number_ots;
+        std::cout << "Protocol: " << options.ot_protocol << "\n"
+                  << "Role: " << (options.role == Role::server ? "Sender" : "Receiver") << "\n"
+                  << "Random-OTs: " << options.number_ots << "\n"
+                  << "Threads: " << options.threads << "\n"
+                  << "Time (total): " << time_total << " us\n"
+                  << "Time (per OT): " << time_per_ot << " us\n";
 
     }
     catch (std::exception &e)
