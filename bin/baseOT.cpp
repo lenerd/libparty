@@ -47,6 +47,16 @@ struct Options
     size_t repetitions;
 };
 
+void print_help(std::ostream& stream, const po::options_description& desc)
+{
+    stream << desc
+           << "\n"
+           << "Available protocols:\n"
+           << "  HL17   Hauck, Loss (2017) https://eprint.iacr.org/2017/1011\n"
+           << "  CO15   Chou, Orlandi (2015) http://eprint.iacr.org/2015/267\n"
+           << "\n";
+}
+
 Options parse_arguments(int argc, char* argv[])
 {
     po::options_description desc("Allowed options");
@@ -68,15 +78,16 @@ Options parse_arguments(int argc, char* argv[])
         po::store(po::parse_command_line(argc, argv, desc), vm);
         if (vm.count("help"))
         {
-            std::cerr << desc << "\n";
+            print_help(std::cerr, desc);
             exit(EXIT_FAILURE);
         }
         po::notify(vm);
     }
     catch (po::error &e)
     {
-        std::cerr << "Error parsing arguments: " << e.what() << "\n";
-        std::cerr << "\n" << desc << "\n";
+        std::cerr << "Error parsing arguments: " << e.what() << "\n"
+                  << "\n";
+        print_help(std::cerr, desc);
         exit(EXIT_FAILURE);
     }
 
