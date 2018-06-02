@@ -66,6 +66,11 @@ Options parse_arguments(int argc, char* argv[])
     try
     {
         po::store(po::parse_command_line(argc, argv, desc), vm);
+        if (vm.count("help"))
+        {
+            std::cerr << desc << "\n";
+            exit(EXIT_FAILURE);
+        }
         po::notify(vm);
     }
     catch (po::error &e)
@@ -75,11 +80,6 @@ Options parse_arguments(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (vm.count("help"))
-    {
-        std::cerr << desc << "\n";
-        exit(EXIT_FAILURE);
-    }
     Options options;
     options.role = vm["role"].as<Role>();
     options.number_ots = vm["number"].as<size_t>();
