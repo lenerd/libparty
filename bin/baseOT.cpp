@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <numeric>
 #include <chrono>
 #include <cstddef>
 #include <iostream>
@@ -43,6 +44,7 @@ struct Options
     std::string input_file;
     std::string output_file;
     OT_Protocol ot_protocol;
+    size_t repetitions;
 };
 
 Options parse_arguments(int argc, char* argv[])
@@ -58,6 +60,7 @@ Options parse_arguments(int argc, char* argv[])
         ("input,i", po::value<std::string>()->default_value("in.txt"), "Input text file (only for receiver)")
         ("output,o", po::value<std::string>()->default_value("out.txt"), "Output text file (for sender and receiver resp.)")
         ("ot", po::value<OT_Protocol>()->default_value(OT_Protocol::HL17), "OT Protocol to use")
+        ("repetitions", po::value<size_t>()->default_value(1), "Number of repetitions")
     ;
     po::variables_map vm;
     try
@@ -86,6 +89,7 @@ Options parse_arguments(int argc, char* argv[])
     options.input_file = vm["input"].as<std::string>();
     options.output_file = vm["output"].as<std::string>();
     options.ot_protocol = vm["ot"].as<OT_Protocol>();
+    options.repetitions = vm["repetitions"].as<size_t>();
     return options;
 }
 
@@ -137,14 +141,13 @@ int main(int argc, char* argv[])
         io_thread = std::thread([&io_context]{io_context.run();});
 
         std::chrono::high_resolution_clock clock;
+        std::vector<decltype(clock)::duration::rep> times;
+        times.reserve(options.repetitions);
 
         auto connection(TCPConnection::from_role(options.role,
                                                  io_context,
                                                  options.address,
                                                  options.port));
-
-        auto t_start = clock.now();
-
         std::unique_ptr<RandomOT> ot;
         switch (options.ot_protocol)
         {
@@ -154,34 +157,43 @@ int main(int argc, char* argv[])
                 ot = std::make_unique<OT_HL17>(*connection);
         };
 
-        if (options.role == Role::server)
+        for (size_t i = 0; i < options.repetitions; ++i)
         {
-            std::vector<std::pair<bytes_t, bytes_t>> output;
-            if (options.threads == 1)
-                output = ot->send(options.number_ots);
-            else
-                output = ot->parallel_send(options.number_ots, options.threads);
-            write_outputfile_sender(options, output);
+            auto t_start = clock.now();
+
+            if (options.role == Role::server)
+            {
+                std::vector<std::pair<bytes_t, bytes_t>> output;
+                if (options.threads == 1)
+                    output = ot->send(options.number_ots);
+                else
+                    output = ot->parallel_send(options.number_ots, options.threads);
+                write_outputfile_sender(options, output);
+            }
+            else  // Role::client
+            {
+                auto choices = parse_inputfile(options);
+                std::vector<bytes_t> output;
+                if (options.threads == 1)
+                    output = ot->recv(choices);
+                else
+                    output = ot->parallel_recv(choices, options.threads);
+                write_outputfile_receiver(options, output);
+            }
+            auto t_end = clock.now();
+            auto duration = t_end - t_start;
+            auto time_round = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+            times.push_back(time_round);
         }
-        else  // Role::client
-        {
-            auto choices = parse_inputfile(options);
-            std::vector<bytes_t> output;
-            if (options.threads == 1)
-                output = ot->recv(choices);
-            else
-                output = ot->parallel_recv(choices, options.threads);
-            write_outputfile_receiver(options, output);
-        }
-        auto t_end = clock.now();
-        auto duration = t_end - t_start;
-        auto time_total = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-        auto time_per_ot = time_total / options.number_ots;
+        auto time_total = std::accumulate(times.cbegin(), times.cend(), 0);
+        auto time_per_round = time_total / options.repetitions;
+        auto time_per_ot = time_total / (options.repetitions * options.number_ots);
         std::cout << "Protocol: " << options.ot_protocol << "\n"
                   << "Role: " << (options.role == Role::server ? "Sender" : "Receiver") << "\n"
                   << "Random-OTs: " << options.number_ots << "\n"
                   << "Threads: " << options.threads << "\n"
-                  << "Time (total): " << time_total << " us\n"
+                  << "Repetitions: " << options.repetitions << "\n"
+                  << "Time (avg.): " << time_per_round << " us\n"
                   << "Time (per OT): " << time_per_ot << " us\n";
 
     }
