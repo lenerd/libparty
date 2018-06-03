@@ -31,20 +31,22 @@ TEST(OT_CO15_Test, SR0)
     DevNullConnection connection;
     OT_CO15 ot{connection};
 
-    OT_CO15::Sender_State ss;
+    OT_CO15::Sender_SharedState sss;
     OT_CO15::Receiver_State rs;
+    OT_CO15::Receiver_SharedState rss;
 
     std::array<uint8_t, OT_CO15::curve25519_ge_byte_size> msg_s0;
     std::array<uint8_t, OT_CO15::curve25519_ge_byte_size> msg_r1;
 
     int choice = 0;
 
-    ot.send_0(ss, msg_s0);
+    ot.send_0(sss, msg_s0);
     ot.recv_0(rs, choice);
-    ot.recv_1(rs, msg_r1, msg_s0);
+    ot.recv_1(rss, msg_s0);
+    ot.recv_2(rs, rss, msg_r1);
 
-    auto res_s = ot.send_1(ss, msg_r1);
-    auto res_r = ot.recv_2(rs);
+    auto res_s = ot.send_1(sss, msg_r1);
+    auto res_r = ot.recv_3(rs, rss);
 
     ASSERT_EQ(res_r, res_s.first);
 }
@@ -55,20 +57,22 @@ TEST(OT_CO15_Test, SR1)
     DevNullConnection connection;
     OT_CO15 ot{connection};
 
-    OT_CO15::Sender_State ss;
+    OT_CO15::Sender_SharedState sss;
     OT_CO15::Receiver_State rs;
+    OT_CO15::Receiver_SharedState rss;
 
     std::array<uint8_t, OT_CO15::curve25519_ge_byte_size> msg_s0;
     std::array<uint8_t, OT_CO15::curve25519_ge_byte_size> msg_r1;
 
     int choice = 0;
 
-    ot.send_0(ss, msg_s0);
+    ot.send_0(sss, msg_s0);
     ot.recv_0(rs, choice);
-    ot.recv_1(rs, msg_r1, msg_s0);
+    ot.recv_1(rss, msg_s0);
+    ot.recv_2(rs, rss, msg_r1);
 
-    auto res_s = ot.send_1(ss, msg_r1);
-    auto res_r = ot.recv_2(rs);
+    auto res_s = ot.send_1(sss, msg_r1);
+    auto res_r = ot.recv_3(rs, rss);
 
     ASSERT_EQ(res_r, res_s.first);
 }

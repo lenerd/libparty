@@ -66,43 +66,45 @@ private:
     Connection& connection_;
 
 public: // for testing
-    struct Sender_State
+    struct Sender_SharedState
     {
-        // a
-        uint8_t a[32];
-        // A
-        curve25519::ge_p3 A;
-        // B
-        curve25519::ge_p3 B;
+        // y
+        uint8_t y[32];
+        // S
+        curve25519::ge_p3 S;
+    };
+    struct Receiver_SharedState
+    {
+        // S
+        curve25519::ge_p3 S;
     };
     struct Receiver_State
     {
         bool choice;
-        // b
-        uint8_t b[32];
-        // A
-        curve25519::ge_p3 A;
-        // B
-        curve25519::ge_p3 B;
+        // x
+        uint8_t x[32];
+        // R
+        curve25519::ge_p3 R;
     };
     static const size_t curve25519_ge_byte_size = 32;
 
     /**
      * Parts of the sender side.
      */
-    void send_0(Sender_State& state,
+    void send_0(Sender_SharedState& state,
                 std::array<uint8_t, curve25519_ge_byte_size>& message_out);
-    std::pair<bytes_t, bytes_t> send_1(Sender_State& state,
+    std::pair<bytes_t, bytes_t> send_1(const Sender_SharedState& state,
                                        const std::array<uint8_t, curve25519_ge_byte_size>& message_in);
 
     /**
      * Parts of the receiver side.
      */
     void recv_0(Receiver_State& state, bool choice);
-    void recv_1(Receiver_State& state,
-                std::array<uint8_t, curve25519_ge_byte_size>& message_out,
+    void recv_1(Receiver_SharedState& sstate,
                 const std::array<uint8_t, curve25519_ge_byte_size>& message_in);
-    bytes_t recv_2(Receiver_State& state);
+    void recv_2(Receiver_State& state, const Receiver_SharedState& sstate,
+                std::array<uint8_t, curve25519_ge_byte_size>& message_out);
+    bytes_t recv_3(const Receiver_State& state, const Receiver_SharedState& sstate);
 };
 
 
