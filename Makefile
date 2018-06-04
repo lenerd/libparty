@@ -12,6 +12,8 @@ OBJECTS = \
     src/curve25519/util.c.o \
     src/network/dummy_connection.cpp.o \
     src/network/tcp_connection.cpp.o \
+    src/ot/ot.cpp.o \
+    src/ot/ot_co15.cpp.o \
     src/ot/ot_hl17.cpp.o \
     src/util/options.cpp.o \
     src/util/threading.cpp.o \
@@ -19,7 +21,7 @@ OBJECTS = \
 
 .phony: clean
 
-baseOT: bin/baseOT.o libparty.a
+baseOT: bin/baseOT.cpp.o libparty.a
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 libparty.a: $(OBJECTS)
@@ -31,11 +33,7 @@ libparty.a: $(OBJECTS)
 %.cpp.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $^
 
-submission.zip: clean
-	7z a submission.zip src bin Makefile benchmarking README
-
 clean:
 	find bin/ src/ -iname "*.o" -delete
 	rm -f libparty.a
 	rm -f baseOT
-	rm -f submission.zip
